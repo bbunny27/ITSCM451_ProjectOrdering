@@ -1,0 +1,9 @@
+# Group project for ITSCM 451. 
+Group: Tyler Deal, Tyler Smith, Kyle Muth
+<br>
+### Goals:
+Your task is to develop a Serverless Order Processing System that allows customers to place orders for
+products. The system should:
+1. Handle customer data, order information, and product inventory.
+2. Process orders in real-time, including stock validation and order confirmation.
+3. Send notifications (email or SMS) to customers when their order is confirmed
