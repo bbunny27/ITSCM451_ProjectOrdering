@@ -1,27 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Capybara Bread Shop</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Capybara Paradise Bread Shop</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #fffaf0;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    h1, h2 {
+      color: #6d4c41;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .tabs button {
+      padding: 0.5rem 1rem;
+      border: none;
+      background-color: #a1887f;
+      color: white;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .tabs button.active {
+      background-color: #8d6e63;
+    }
+
+    section {
+      display: none;
+    }
+
+    section.active {
+      display: block;
+    }
+
+    input, button {
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
+      display: block;
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    button:hover {
+      background-color: #8d6e63;
+    }
+
+    form {
+      max-width: 500px;
+      background-color: #ffffff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 0.75rem;
+      text-align: left;
+    }
+
+    th {
+      background-color: #ffe0b2;
+    }
+  </style>
 </head>
 <body>
-  <h1>Welcome to Capybara Bread Shop 🦫🍞</h1>
+  <h1>Capybara Paradise Bread Shop 🦫🍞</h1>
 
-  <h2>Place an Order</h2>
-  <label for="itemSelect">Select Item:</label>
-  <select id="itemSelect">
-    <option value="baguette">Baguette</option>
-    <option value="sourdough">Sourdough</option>
-  </select>
-  <label for="quantityInput">Quantity:</label>
-  <input type="number" id="quantityInput" value="1" min="1">
-  <button onclick="placeOrder()">Place Order</button>
+  <div class="tabs">
+    <button onclick="showTab('detailed')" class="active">Place Order</button>
+    <button onclick="showTab('history')">Order History</button>
+  </div>
 
-  <h2>My Orders</h2>
-  <button onclick="loadMyOrders()">Refresh Order History</button>
-  <ul id="orderHistory"></ul>
+  <!-- Detailed Order Tab -->
+  <section id="detailed" class="active">
+    <h2>Place a Detailed Bread Order</h2>
+    <form onsubmit="submitDetailedOrder(event)">
+      <label for="name">Customer Name:</label>
+      <input type="text" id="name" name="name" required>
 
-  <!-- ✅ Load the JS after the HTML so functions are defined when called -->
-  <script src="shop.js"></script>
+      <label for="ciabatta">Ciabatta (Qty @ $10 each):</label>
+      <input type="number" id="ciabatta" name="ciabatta_qty" min="0" value="0" required>
+
+      <label for="sourdough">Sourdough (Qty @ $15 each):</label>
+      <input type="number" id="sourdough" name="sourdough_qty" min="0" value="0" required>
+
+      <label for="baguette">Baguette (Qty @ $7 each):</label>
+      <input type="number" id="baguette" name="baguette_qty" min="0" value="0" required>
+
+      <label for="total">Total Price ($):</label>
+      <input type="number" id="total" name="total" step="0.01" readonly>
+
+      <button type="submit">Place Order</button>
+    </form>
+  </section>
+
+  <!-- Order History Tab -->
+  <section id="history">
+    <h2>Order History</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Date</th>
+          <th>Customer</th>
+          <th>Ciabatta</th>
+          <th>Sourdough</th>
+          <th>Baguette</th>
+          <th>Total ($)</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="order-table-body">
+        <!-- Orders will be injected here -->
+      </tbody>
+    </table>
+  </section>
+
+  <script>
+    // Tab switching
+    function showTab(tabId) {
+      document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('section').forEach(sec => sec.classList.remove('active'));
+      document.querySelector(`.tabs button[onclick="showTab('${tabId}')"]`).classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    // Detailed order price calculation
+    const ciabattaInput = document.getElementById("ciabatta");
+    const sourdoughInput = document.getElementById("sourdough");
+    const baguetteInput = document.getElementById("baguette");
+    const totalInput = document.getElementById("total");
+
+    function calculateTotal() {
+      const ciabattaQty = parseInt(ciabattaInput.value) || 0;
+      const sourdoughQty = parseInt(sourdoughInput.value) || 0;
+      const baguetteQty = parseInt(baguetteInput.value) || 0;
+      const total = (ciabattaQty * 10) + (sourdoughQty * 15) + (baguetteQty * 7);
+      totalInput.value = total.toFixed(2);
+    }
+
+    ciabattaInput.addEventListener("input", calculateTotal);
+    sourdoughInput.addEventListener("input", calculateTotal);
+    baguetteInput.addEventListener("input", calculateTotal);
+    calculateTotal();
+
+    function submitDetailedOrder(event) {
+      event.preventDefault();
+      alert("Order submitted! (This should go to your backend or storage in production.)");
+    }
+
+    // Order history from S3 or similar
+    async function loadOrders() {
+      const S3_JSON_URL = "https://your-bucket-name.s3.amazonaws.com/orders.json"; // Replace this
+      try {
+        const response = await fetch(S3_JSON_URL);
+        if (!response.ok) throw new Error("Failed to fetch order data");
+        const orders = await response.json();
+        const tableBody = document.getElementById("order-table-body");
+        tableBody.innerHTML = "";
+        orders.forEach(order => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${order.orderId}</td>
+            <td>${order.date}</td>
+            <td>${order.customer}</td>
+            <td>${order.ciabatta}</td>
+            <td>${order.sourdough}</td>
+            <td>${order.baguette}</td>
+            <td>${order.total.toFixed(2)}</td>
+            <td>${order.status}</td>
+          `;
+          tableBody.appendChild(row);
+        });
+      } catch (error) {
+        console.error("Error loading orders:", error);
+        const tableBody = document.getElementById("order-table-body");
+        tableBody.innerHTML = `<tr><td colspan="8">Failed to load order history.</td></tr>`;
+      }
+    }
+
+    document.querySelector(`button[onclick="showTab('history')"]`).addEventListener("click", loadOrders);
+  </script>
 </body>
 </html>
