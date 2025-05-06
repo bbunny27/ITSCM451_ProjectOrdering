@@ -1,52 +1,55 @@
-import boto3
+import pymysql
 import json
 
 def lambda_handler(event, context):
-    s3 = boto3.client('s3')
-    bucket = 'capybara-inventory-store'
-    key = 'orders.json'
+    print("Lambda started")
+    print(json.dumps(event))
 
-    # Get the Cognito user ID from the request context
     try:
-        claims = event['requestContext']['authorizer']['jwt']['claims']
-        user_id = claims.get('sub', 'unknown')
+        user_id = event['requestContext']['authorizer']['jwt']['claims']['sub']
+        print("User ID:", user_id)
     except Exception as e:
+        print("Auth Error:", str(e))
         return {
             "statusCode": 403,
             "body": json.dumps({"error": "Unauthorized"}),
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
-            "isBase64Encoded": False
+            "headers": {"Access-Control-Allow-Origin": "*"}
         }
 
     try:
-        # Load all orders from S3
-        response = s3.get_object(Bucket=bucket, Key=key)
-        orders = json.loads(response['Body'].read())
+        connection = pymysql.connect(
+            host='3.147.73.212',
+            user='shopadmin',
+            password='I<3Capybara',
+            database='capybara_shop',
+            connect_timeout=5
+        )
 
-        # Filter orders for this user
-        user_orders = [o for o in orders if o.get('user_id') == user_id]
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            cursor.execute("SELECT * FROM orders WHERE user_id = %s", (user_id,))
+            orders = cursor.fetchall()
+
+        # Serialize datetime objects
+        for order in orders:
+            if 'timestamp' in order and isinstance(order['timestamp'], (str, bytes)) is False:
+                order['timestamp'] = order['timestamp'].isoformat()
 
         return {
             "statusCode": 200,
-            "body": json.dumps(user_orders),
+            "body": json.dumps(orders),
             "headers": {
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*"
-            },
-            "isBase64Encoded": False
+            }
         }
 
     except Exception as e:
-        print("ERROR:", str(e))
+        print("DB Error:", str(e))
         return {
             "statusCode": 500,
             "body": json.dumps({"error": str(e)}),
             "headers": {
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*"
-            },
-            "isBase64Encoded": False
+            }
         }

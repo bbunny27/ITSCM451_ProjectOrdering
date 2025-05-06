@@ -1,0 +1,22 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #f9f9f9;
+    padding: 20px;
+  }
+  
+  h1 {
+    color: #444;
+  }
+  
+  #orders {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  }
+  
+  .order {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+  }
+  
